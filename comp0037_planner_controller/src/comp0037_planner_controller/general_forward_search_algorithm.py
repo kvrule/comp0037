@@ -6,6 +6,7 @@ from planner_base import PlannerBase
 from collections import deque
 from cell import *
 from planned_path import PlannedPath
+from path_metric import PathMetric
 from math import *
 import rospy
 
@@ -20,6 +21,9 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
          
         # Flag to store if the last plan was successful
         self.goalReached = None
+
+        # Keeps track of some key path planning metrics
+        self.pathMetric = PathMetric()
 
     # These methods manage the queue of cells to be visied.
     def pushCellOntoQueue(self, cell):
@@ -50,6 +54,7 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
     def markCellAsVisitedAndRecordParent(self, cell, parentCell):
         cell.label = CellLabel.ALIVE
         cell.parent = parentCell
+        self.pathMetric.incrementCellsVisited()
 
     # Mark that a cell is dead. A dead cell is one in which all of its
     # immediate neighbours have been visited.
@@ -94,6 +99,10 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
         while (self.isQueueEmpty() == False):
             self.popCellFromQueue()
         
+        # Keeps track of the queue size for updating path metrics. Initialised
+        # to zero at the beginning of the search.
+        queueSize = 0
+
         # Create or update the search grid from the occupancy grid and seed
         # unvisited and occupied cells.
         if (self.searchGrid is None):
@@ -121,6 +130,8 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
         # Insert the start on the queue to start the process going.
         self.markCellAsVisitedAndRecordParent(self.start, None)
         self.pushCellOntoQueue(self.start)
+        queueSize += 1
+        self.pathMetric.updateMaxQueueLength(queueSize)
 
         # Reset the count
         self.numberOfCellsVisited = 0
@@ -139,6 +150,7 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
                 return False
             
             cell = self.popCellFromQueue()
+            queueSize -= 1
             if (self.hasGoalBeenReached(cell) == True):
                 self.goalReached = True
                 break
@@ -147,6 +159,8 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
                 if (self.hasCellBeenVisitedAlready(nextCell) == False):
                     self.markCellAsVisitedAndRecordParent(nextCell, cell)
                     self.pushCellOntoQueue(nextCell)
+                    queueSize += 1
+                    self.pathMetric.updateMaxQueueLength(queueSize)
                     self.numberOfCellsVisited = self.numberOfCellsVisited + 1
                 else:
                     self.resolveDuplicate(nextCell, cell)
@@ -207,8 +221,12 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
         if path.goalReached is False:
             path.travelCost = float("inf")
 
+        self.pathMetric.setTotalTravelCost(path.travelCost)
+
         print "Path travel cost = " + str(path.travelCost)
         print "Path cardinality = " + str(path.numberOfWaypoints)
+
+        self.pathMetric.printMetrics()
         
         # Draw the path if requested
         if (self.showGraphics == True):
