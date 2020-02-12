@@ -3,6 +3,7 @@
 # This class stores information about each cell - its coordinates in the grid,
 # its label, its parents and the path cost.
 
+from math import sqrt
 from enum import Enum
 
 
@@ -35,3 +36,13 @@ class Cell(object):
         # The initial path cost is infinite. For algorithms that need
         # it, this is the necessary initial condition.
         self.pathCost = float("inf")
+
+        self.distanceFromGoal = float("inf")
+    
+    def updateDistanceFromGoal(self, goalCoords):
+        xDiff = self.coords[0] - goalCoords[0]
+        yDiff = self.coords[1] - goalCoords[1]
+        self.distanceFromGoal = sqrt((xDiff ** 2) + (yDiff ** 2))
+
+    def __cmp__(self, other):
+        return cmp(self.distanceFromGoal, other.distanceFromGoal)

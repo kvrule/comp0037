@@ -158,6 +158,7 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
             for nextCell in cells:
                 if (self.hasCellBeenVisitedAlready(nextCell) == False):
                     self.markCellAsVisitedAndRecordParent(nextCell, cell)
+                    nextCell.updateDistanceFromGoal(goalCoords)
                     self.pushCellOntoQueue(nextCell)
                     queueSize += 1
                     self.pathMetric.updateMaxQueueLength(queueSize)
