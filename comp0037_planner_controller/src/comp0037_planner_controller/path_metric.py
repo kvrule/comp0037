@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from math import sqrt
+from math import acos
+
 class PathMetric(object):
 
     """ Keeps track of path planning metrics and provides a method, printMetrics,
@@ -28,6 +31,19 @@ class PathMetric(object):
         """ Sets total travel cost metric to cost. """
 
         self._totalTravelCost = cost
+    
+    def calculateAndAddTotalTurnAngle(self, prevVec, currVec):
+        """ Calculates the turn angle using the dot product of the direction
+            vector to the previous cell and the direction vector to the
+            current cell and adds it to the current total turn angle. """
+        
+        dotProduct = prevVec[0] * currVec[0] + prevVec[1] * currVec[1]
+        prevSize = sqrt((prevVec[0] ** 2) + (prevVec[1] ** 2))
+        currSize = sqrt((currVec[0] ** 2) + (currVec[1] ** 2))
+
+        theta = abs(acos(dotProduct / (prevSize * currSize)))
+        theta = theta * (180 / 3.1415) # Converts from radians to degrees
+        self._totalTurnAngle += theta
 
     def printMetrics(self):
         """ Prints all path metrics, with their descriptions and corresponding

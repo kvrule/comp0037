@@ -205,11 +205,21 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
         # Start at the goal and find the parent. Find the cost associated with the parent
         cell = pathEndCell.parent
         path.travelCost = self.computeLStageAdditiveCost(pathEndCell.parent, pathEndCell)
+
+        prevDirecVector = [pathEndCell.coords[0] - cell.coords[0], pathEndCell.coords[1] - 
+                                                                            cell.coords[1]]
+        
+        oldCell = pathEndCell
         
         # Iterate back through and extract each parent in turn and add
         # it to the path. To work out the travel length along the
         # path, you'll also have to add self at self stage.
         while (cell is not None):
+            currDirecVector = [oldCell.coords[0] - cell.coords[0], oldCell.coords[1] - 
+                                                                        cell.coords[1]]
+            self.pathMetric.calculateAndAddTotalTurnAngle(prevDirecVector, currDirecVector)
+            prevDirecVector = currDirecVector
+            oldCell = cell
             path.waypoints.appendleft(cell)
             path.travelCost = path.travelCost + self.computeLStageAdditiveCost(cell.parent, cell)
             cell = cell.parent
