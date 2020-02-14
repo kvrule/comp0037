@@ -113,11 +113,13 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
         # Get the start cell object and label it as such. Also set its
         # path cost to 0.
         self.start = self.searchGrid.getCellFromCoords(startCoords)
+        self.start.setAlgoPriorityType(self.getAlgorithmType())
         self.start.label = CellLabel.START
         self.start.pathCost = 0
 
         # Get the goal cell object and label it.
         self.goal = self.searchGrid.getCellFromCoords(goalCoords)
+        self.goal.setAlgoPriorityType(self.getAlgorithmType())
         self.goal.label = CellLabel.GOAL
 
         # If the node is being shut down, bail out here.
@@ -159,6 +161,8 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
                 if (self.hasCellBeenVisitedAlready(nextCell) == False):
                     self.markCellAsVisitedAndRecordParent(nextCell, cell)
                     nextCell.updateDistanceFromGoal(goalCoords)
+                    nextCell.setPathCost(cell.pathCost + self.computeLStageAdditiveCost(cell, nextCell))
+                    nextCell.setAlgoPriorityType(self.getAlgorithmType())
                     self.pushCellOntoQueue(nextCell)
                     queueSize += 1
                     self.pathMetric.updateMaxQueueLength(queueSize)

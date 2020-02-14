@@ -38,11 +38,26 @@ class Cell(object):
         self.pathCost = float("inf")
 
         self.distanceFromGoal = float("inf")
+
+        self.algoPriorityType = ""
     
     def updateDistanceFromGoal(self, goalCoords):
         xDiff = self.coords[0] - goalCoords[0]
         yDiff = self.coords[1] - goalCoords[1]
         self.distanceFromGoal = sqrt((xDiff ** 2) + (yDiff ** 2))
 
+    def setPathCost(self, cost):
+        self.pathCost = cost
+
+    def setAlgoPriorityType(self, algoType):
+        self.algoPriorityType = algoType
+
     def __cmp__(self, other):
-        return cmp(self.distanceFromGoal, other.distanceFromGoal)
+        """ Used by the priority queue in the path planner to compare cells
+            with certain properties depending on the path planner used. """
+
+        # Chooses which attribute of the cell to compare in priority queue.    
+        if self.algoPriorityType == "greedy":
+            return cmp(self.distanceFromGoal, other.distanceFromGoal)
+        else: # Dijkstra
+            return cmp(self.pathCost, other.pathCost)

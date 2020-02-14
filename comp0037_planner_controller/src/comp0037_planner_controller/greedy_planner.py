@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 
 from cell_based_forward_search import CellBasedForwardSearch
-from Queue import PriorityQueue
+try:
+    from queue import PriorityQueue # For Python 3
+except:
+    from Queue import PriorityQueue # For Python 2.7
 
-# This class implements the FIFO - or breadth first search - planning
-# algorithm. It works by using a double ended queue: cells are pushed
-# onto the back of the queue, and are popped from the front of the
-# queue.
+# This class implements the Best first search - Greedy planning
+# algorithm. It works by using a priority queue: cells are pushed
+# onto the queue, and are popped based on prioritising cells with
+# the smallest euclidean distance to the goal node.
 
 class GreedyPlanner(CellBasedForwardSearch):
 
@@ -17,6 +20,7 @@ class GreedyPlanner(CellBasedForwardSearch):
     def __init__(self, title, occupancyGrid):
         CellBasedForwardSearch.__init__(self, title, occupancyGrid)
         self.priorityQueue = PriorityQueue()
+        self.ALGORITHM_TYPE = "greedy"
 
     # Simply put on the end of the queue
     def pushCellOntoQueue(self, cell):
@@ -26,7 +30,7 @@ class GreedyPlanner(CellBasedForwardSearch):
     def isQueueEmpty(self):
         return self.priorityQueue.empty()
 
-    # Simply pull from the front of the list
+    # Pull the highest priority cell.
     def popCellFromQueue(self):
         cell = self.priorityQueue.get()
         return cell
@@ -34,3 +38,6 @@ class GreedyPlanner(CellBasedForwardSearch):
     def resolveDuplicate(self, cell, parentCell):
         # Nothing to do in self case
         pass
+
+    def getAlgorithmType(self):
+        return self.ALGORITHM_TYPE

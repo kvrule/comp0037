@@ -5,10 +5,11 @@ from cell_based_forward_search import CellBasedForwardSearch
 class LIFOPlanner(CellBasedForwardSearch):
 
     # This implements a simple LIFO (last in first out or depth first) search algorithm
-    
+
     def __init__(self, title, occupancyGrid):
         CellBasedForwardSearch.__init__(self, title, occupancyGrid)
         self.lifoQueue = list()
+        self.ALGORITHM_TYPE = "lifo"
 
     # Simply put on the end of the queue
     def pushCellOntoQueue(self, cell):
@@ -26,3 +27,6 @@ class LIFOPlanner(CellBasedForwardSearch):
     def resolveDuplicate(self, cell, parentCell):
         # Nothing to do in self case
         pass
+
+    def getAlgorithmType(self):
+        return self.ALGORITHM_TYPE

@@ -14,6 +14,7 @@ class FIFOPlanner(CellBasedForwardSearch):
     def __init__(self, title, occupancyGrid):
         CellBasedForwardSearch.__init__(self, title, occupancyGrid)
         self.fifoQueue = deque()
+        self.ALGORITHM_TYPE = "fifo"
 
     # Simply put on the end of the queue
     def pushCellOntoQueue(self, cell):
@@ -31,3 +32,6 @@ class FIFOPlanner(CellBasedForwardSearch):
     def resolveDuplicate(self, cell, parentCell):
         # Nothing to do in self case
         pass
+
+    def getAlgorithmType(self):
+        return self.ALGORITHM_TYPE
