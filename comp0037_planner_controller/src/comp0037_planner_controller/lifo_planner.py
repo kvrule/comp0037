@@ -30,3 +30,6 @@ class LIFOPlanner(CellBasedForwardSearch):
 
     def getAlgorithmType(self):
         return self.ALGORITHM_TYPE
+    
+    def calculateHeuristic(self, heuristic, startCoords, goalCoords):
+        return
