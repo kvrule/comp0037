@@ -38,6 +38,7 @@ class Cell(object):
         self.pathCost = float("inf")
 
         self.distanceFromGoal = float("inf")
+        self.estDistanceFromGoal = float("inf")
 
         self.algoPriorityType = ""
     
@@ -45,6 +46,9 @@ class Cell(object):
         xDiff = self.coords[0] - goalCoords[0]
         yDiff = self.coords[1] - goalCoords[1]
         self.distanceFromGoal = sqrt((xDiff ** 2) + (yDiff ** 2))
+
+    def setEstimatedDistanceFromGoal(self, distance):
+        self.estDistanceFromGoal = distance
 
     def setPathCost(self, cost):
         self.pathCost = cost
@@ -59,5 +63,8 @@ class Cell(object):
         # Chooses which attribute of the cell to compare in priority queue.    
         if self.algoPriorityType == "greedy":
             return cmp(self.distanceFromGoal, other.distanceFromGoal)
-        else: # Dijkstra
+        elif self.algoPriorityType == "dijkstra":
             return cmp(self.pathCost, other.pathCost)
+        else: # A* algorithm
+            return cmp(self.pathCost + self.estDistanceFromGoal,
+                       other.pathCost + other.estDistanceFromGoal)

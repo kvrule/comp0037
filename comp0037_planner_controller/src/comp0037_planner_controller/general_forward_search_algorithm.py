@@ -161,6 +161,8 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
                 if (self.hasCellBeenVisitedAlready(nextCell) == False):
                     self.markCellAsVisitedAndRecordParent(nextCell, cell)
                     nextCell.updateDistanceFromGoal(goalCoords)
+                    heuristic = self.calculateHeuristic("euclidean", nextCell.coords, goalCoords)
+                    nextCell.setEstimatedDistanceFromGoal(heuristic)
                     nextCell.setPathCost(cell.pathCost + self.computeLStageAdditiveCost(cell, nextCell))
                     nextCell.setAlgoPriorityType(self.getAlgorithmType())
                     self.pushCellOntoQueue(nextCell)
