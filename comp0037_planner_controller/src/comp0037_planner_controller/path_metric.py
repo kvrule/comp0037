@@ -40,10 +40,13 @@ class PathMetric(object):
         dotProduct = prevVec[0] * currVec[0] + prevVec[1] * currVec[1]
         prevSize = sqrt((prevVec[0] ** 2) + (prevVec[1] ** 2))
         currSize = sqrt((currVec[0] ** 2) + (currVec[1] ** 2))
-
-        theta = abs(acos(dotProduct / (prevSize * currSize)))
-        theta = theta * (180 / 3.1415) # Converts from radians to degrees
-        self._totalTurnAngle += theta
+        
+        if prevSize == 0 or currSize == 0:
+            return
+        else:
+            theta = abs(acos(dotProduct / (prevSize * currSize)))
+            theta = theta * (180 / 3.1415) # Converts from radians to degrees
+            self._totalTurnAngle += theta
 
     def printMetrics(self):
         """ Prints all path metrics, with their descriptions and corresponding

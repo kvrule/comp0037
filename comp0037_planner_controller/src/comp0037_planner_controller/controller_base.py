@@ -6,6 +6,7 @@ from std_msgs.msg import String
 from nav_msgs.msg import Odometry
 from math import pow,atan2,sqrt,pi
 from planned_path import PlannedPath
+from robot_metrics import RobotMetric
 import time
 import math
 
@@ -16,6 +17,8 @@ class ControllerBase(object):
     def __init__(self, occupancyGrid):
 
         rospy.wait_for_message('/robot0/odom', Odometry)
+
+        self.robotMetric = RobotMetric()
 
         # Create the node, publishers and subscriber
         self.velocityPublisher = rospy.Publisher('/robot0/cmd_vel', Twist, queue_size=10)
@@ -90,3 +93,4 @@ class ControllerBase(object):
         if rospy.is_shutdown() is False:
             self.rotateToGoalOrientation(goalOrientation)
  
+        self.robotMetric.printMetrics()

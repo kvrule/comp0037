@@ -17,7 +17,7 @@ class Move2GoalController(ControllerBase):
 
     def __init__(self, occupancyGrid):
         ControllerBase.__init__(self, occupancyGrid)
-        
+
         # Get the proportional gain settings
         self.distanceErrorGain = rospy.get_param('distance_error_gain', 1)
         self.angleErrorGain = rospy.get_param('angle_error_gain', 4)
@@ -43,12 +43,17 @@ class Move2GoalController(ControllerBase):
         dY = waypoint[1] - self.pose.y
         distanceError = sqrt(dX * dX + dY * dY)
         angleError = self.shortestAngularDistance(self.pose.theta, atan2(dY, dX))
+        # prevX = self.pose.x
+        # prevY = self.pose.x
+        # prevTheta = self.pose.theta
+        prevDistanceError = distanceError
+        prevAngleError = angleError
        
         while (distanceError >= self.distanceErrorTolerance) & (not rospy.is_shutdown()):
             #print("Current Pose: x: {}, y:{} , theta: {}\nGoal: x: {}, y: {}\n".format(self.pose.x, self.pose.y,
             #                                                                           self.pose.theta, waypoint[0],
             #                                                                           waypoint[1]))
-            print("Distance Error: {}\nAngular Error: {}".format(distanceError, angleError))
+            #print("Distance Error: {}\nAngular Error: {}".format(distanceError, angleError))
 
             # Proportional Controller
             # linear velocity in the x-axis: only switch on when the angular error is sufficiently small
@@ -71,9 +76,23 @@ class Move2GoalController(ControllerBase):
                 
             self.rate.sleep()
 
+            self.robotMetric.addTime()
+
+            # changeInDist = self.get_distance(prevX, prevY)
+            # changeInTheta = self.pose.theta - prevTheta
+            # self.robotMetric.addToDistanceTravelled(changeInDist)
+            # self.robotMetric.addToTotalTurnAngle(changeInTheta)
+            # prevX = self.pose.x
+            # prevY = self.pose.x
+            # prevTheta = self.pose.theta
+
             distanceError = sqrt(pow((waypoint[0] - self.pose.x), 2) + pow((waypoint[1] - self.pose.y), 2))
             angleError = self.shortestAngularDistance(self.pose.theta,
                                                       atan2(waypoint[1] - self.pose.y, waypoint[0] - self.pose.x))
+            self.robotMetric.addToDistanceTravelled(abs(distanceError - prevDistanceError))
+            self.robotMetric.addToTotalTurnAngle(abs(angleError - prevAngleError))
+            prevDistanceError = distanceError
+            prevAngleError = angleError
 
         # Make sure the robot is stopped once we reach the destination.
         vel_msg.linear.x = 0
@@ -86,6 +105,8 @@ class Move2GoalController(ControllerBase):
         goalOrientation = math.radians(goalOrientation)
 
         angleError = self.shortestAngularDistance(self.pose.theta, goalOrientation)
+
+        prevAngleError = angleError
 
         while (math.fabs(angleError) >= self.goalAngleErrorTolerance) & (not rospy.is_shutdown()):
             #print 'Angular Error: ' + str(angleError)
@@ -101,7 +122,12 @@ class Move2GoalController(ControllerBase):
                 self.plannerDrawer.flushAndUpdateWindow()
                 
             self.rate.sleep()
+
+            self.robotMetric.addTime()
+
             angleError = self.shortestAngularDistance(self.pose.theta, goalOrientation)
+            self.robotMetric.addToTotalTurnAngle(abs(angleError - prevAngleError))
+            prevAngleError = angleError
 
         # Stop movement once finished
         vel_msg.angular.z = 0
