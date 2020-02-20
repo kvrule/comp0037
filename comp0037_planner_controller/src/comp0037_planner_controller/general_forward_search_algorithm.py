@@ -191,6 +191,49 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
 
         return self.goalReached
 
+    # Checks if the next cell in the path changes direction from the
+    # current cell's path direction.
+    def changingDirection(self, prevCell, currCell, nextCell):
+        
+        currXDiff = currCell.coords[0] - prevCell.coords[0]
+        currYDiff = currCell.coords[1] - prevCell.coords[1]
+        nextXDiff = nextCell.coords[0] - currCell.coords[0]
+        nextYDiff = nextCell.coords[1] - currCell.coords[1]
+
+        if currXDiff == nextXDiff and currYDiff == nextYDiff:
+            return True
+        else:
+            return False
+
+    # Converts the path of waypoints that move in the same direction
+    # to just two points, a start and end point, rather than having
+    # multiple points inbetween.
+    def optimisePath(self, path):
+        
+        waypointsSize = len(path.waypoints)
+
+        if waypointsSize == 0 or waypointsSize == 1:
+            return path
+
+        newWaypoints = []
+        newWaypoints.append(path.waypoints[0]) # Add first cell.
+
+        prevCell = path.waypoints[0]
+
+        for i in range(1, waypointsSize - 1):
+            currCell = path.waypoints[i]
+            nextCell = path.waypoints[i + 1]
+
+            if not self.changingDirection(prevCell, currCell, nextCell):
+                newWaypoints.append(currCell)
+            
+            prevCell = currCell
+        
+        newWaypoints.append(path.waypoints[waypointsSize - 1])
+
+        path.waypoints = newWaypoints
+        return path
+
     # This method extracts a path from the pathEndCell to the start
     # cell. The path is a list actually sorted in the order:
     # cell(x_1), cell(x_2), ... , cell(x_K), cell(x_G). You can use
@@ -231,6 +274,8 @@ class GeneralForwardSearchAlgorithm(PlannerBase):
             path.travelCost = path.travelCost + self.computeLStageAdditiveCost(cell.parent, cell)
             cell = cell.parent
             
+        path = self.optimisePath(path)
+
         # Update the stats on the size of the path
         path.numberOfWaypoints = len(path.waypoints)
 

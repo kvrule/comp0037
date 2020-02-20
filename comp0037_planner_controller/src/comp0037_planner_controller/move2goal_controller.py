@@ -43,9 +43,7 @@ class Move2GoalController(ControllerBase):
         dY = waypoint[1] - self.pose.y
         distanceError = sqrt(dX * dX + dY * dY)
         angleError = self.shortestAngularDistance(self.pose.theta, atan2(dY, dX))
-        # prevX = self.pose.x
-        # prevY = self.pose.x
-        # prevTheta = self.pose.theta
+        
         prevDistanceError = distanceError
         prevAngleError = angleError
        
@@ -77,14 +75,6 @@ class Move2GoalController(ControllerBase):
             self.rate.sleep()
 
             self.robotMetric.addTime()
-
-            # changeInDist = self.get_distance(prevX, prevY)
-            # changeInTheta = self.pose.theta - prevTheta
-            # self.robotMetric.addToDistanceTravelled(changeInDist)
-            # self.robotMetric.addToTotalTurnAngle(changeInTheta)
-            # prevX = self.pose.x
-            # prevY = self.pose.x
-            # prevTheta = self.pose.theta
 
             distanceError = sqrt(pow((waypoint[0] - self.pose.x), 2) + pow((waypoint[1] - self.pose.y), 2))
             angleError = self.shortestAngularDistance(self.pose.theta,
