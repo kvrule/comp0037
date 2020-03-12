@@ -39,7 +39,7 @@ class TimeServerNode(object):
         sleepWallclockPeriod = 1.0 / float(self.clockSendRate)
 
         # Simulation time increment with each message
-        simulationTimeIncrement = self.timeScaleFactor * sleepWallclockPeriod
+        simulationTimeIncrement = self.timeScaleFactor * sleepWallclockPeriod * 1.5
         
         # Get the next sleep time and seed it
         sleepUntilWallclockTime = startWallclockTime + sleepWallclockPeriod

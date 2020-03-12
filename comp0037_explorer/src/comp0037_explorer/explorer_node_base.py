@@ -65,11 +65,29 @@ class ExplorerNodeBase(object):
         self.occupancyGrid.updateGridFromVector(msg.occupancyGrid)
         self.deltaOccupancyGrid.updateGridFromVector(msg.deltaOccupancyGrid)
         
+        self.printCoverage()
+        
         # Update the frontiers
         self.updateFrontiers()
 
         # Flag there's something to show graphically
         self.visualisationUpdateRequired = True
+
+    def printCoverage(self):
+        """ Prints number of cells covered (i.e known to the robot as a free
+            cell or an obstacle cell) as a percentage of all cells. """
+
+        numberCovered = 0
+
+        for x in range(0, self.occupancyGrid.getWidthInCells()):
+            for y in range(0, self.occupancyGrid.getHeightInCells()):
+                if self.occupancyGrid.getCell(x, y) != 0.5: # Its been detected by sensor.
+                    numberCovered += 1
+        
+        totalNumberOfCells = self.occupancyGrid.getWidthInCells() * self.occupancyGrid.getHeightInCells()
+        coverage = 100 * numberCovered / totalNumberOfCells # As a percentage.
+
+        rospy.loginfo("Coverage (%): {}".format(coverage))
 
     # This method determines if a cell is a frontier cell or not. A
     # frontier cell is open and has at least one neighbour which is
