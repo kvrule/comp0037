@@ -217,17 +217,33 @@ class ExplorerNodeBase(object):
                 else:
                     self.completed = True
                     
-       
+    def printEntropy(self):
+        """ Calculates and prints the entropy of the following occupancy grid. """
+
+        entropy = 0
+
+        for x in range(0, self.occupancyGrid.getWidthInCells()):
+            for y in range(0, self.occupancyGrid.getHeightInCells()):
+                if self.occupancyGrid.getCell(x, y) == 0.5:
+                    entropy += math.log(2) # Natural log
+        
+        print("Entropy: {}".format(entropy))
+
     def run(self):
 
         explorerThread = ExplorerNodeBase.ExplorerThread(self)
 
+        timePassed = 0
         keepRunning = True
         
         while (rospy.is_shutdown() is False) & (keepRunning is True):
 
             rospy.sleep(0.1)
             
+            if timePassed >= 5:
+                self.printEntropy()
+                timePassed = 0
+
             self.updateVisualisation()
 
             if self.occupancyGrid is None:
@@ -240,5 +256,6 @@ class ExplorerNodeBase(object):
                 explorerThread.join()
                 keepRunning = False
 
+            timePassed += 0.1
             
             
