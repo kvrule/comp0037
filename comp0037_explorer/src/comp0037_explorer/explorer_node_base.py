@@ -1,6 +1,7 @@
 import rospy
 import threading
 import math
+from matplotlib import pyplot as plt
 
 from comp0037_mapper.msg import *
 from comp0037_mapper.srv import *
@@ -216,8 +217,22 @@ class ExplorerNodeBase(object):
                     self.explorer.destinationReached(newDestination, attempt)
                 else:
                     self.completed = True
-                    
-    def printEntropy(self):
+
+    def drawEntropyGraph(self, timePassed, entropy):
+        plt.plot(timePassed, entropy, "bo")
+
+        plt.xlabel("Time (s)")
+        plt.ylabel("Entropy")
+
+        plt.title("Entropy Over Time Plot")
+
+        plt.draw()
+        plt.pause(0.00000000000001)
+
+        plt.ion()
+        plt.show()
+
+    def printEntropy(self, timePassed):
         """ Calculates and prints the entropy of the following occupancy grid. """
 
         entropy = 0
@@ -227,12 +242,15 @@ class ExplorerNodeBase(object):
                 if self.occupancyGrid.getCell(x, y) == 0.5:
                     entropy += math.log(2) # Natural log
         
+        self.drawEntropyGraph(timePassed, entropy)
+
         print("Entropy: {}".format(entropy))
 
     def run(self):
 
         explorerThread = ExplorerNodeBase.ExplorerThread(self)
 
+        totalTime = 0
         timePassed = 0
         keepRunning = True
         
@@ -241,7 +259,7 @@ class ExplorerNodeBase(object):
             rospy.sleep(0.1)
             
             if timePassed >= 5:
-                self.printEntropy()
+                self.printEntropy(totalTime)
                 timePassed = 0
 
             self.updateVisualisation()
@@ -257,5 +275,5 @@ class ExplorerNodeBase(object):
                 keepRunning = False
 
             timePassed += 0.1
-            
+            totalTime += 0.1
             
