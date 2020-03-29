@@ -10,8 +10,7 @@ class DijkstraPlanner(CellBasedForwardSearch):
         CellBasedForwardSearch.__init__(self, title, occupancyGrid)
         self.priorityQueue = PriorityQueue()
 
-    # Put the cell on the queue, using the path cost as the key to
-    # determine the search order
+    # Update the cost to self cell and sort according to self cumulative cost
     def pushCellOntoQueue(self, cell):
     
         if (cell.parent is not None):
@@ -20,8 +19,10 @@ class DijkstraPlanner(CellBasedForwardSearch):
             cell.pathCost = cell.parent.pathCost + d
         else:
             cell.pathCost = 0
+
+        key = self.computePriorityQueueKey(cell)
             
-        self.priorityQueue.put((cell.pathCost, cell))
+        self.priorityQueue.put((key, cell))
 
     # Check the queue size is zero
     def isQueueEmpty(self):
@@ -35,24 +36,32 @@ class DijkstraPlanner(CellBasedForwardSearch):
     def resolveDuplicate(self, cell, parentCell):
 
         # See if the cost from the parent cell to this cell is shorter
-        # than the existing path. If so, use it instead.
-        dX = cell.coords[0] - parentCell.coords[0]
-        dY = cell.coords[1] - parentCell.coords[1]
-        d = math.sqrt(dX * dX + dY * dY)
+        # than the existing path. If so, use it instead. NOTE: This should
+        d = self.computeLStageAdditiveCost(parentCell, cell)
         pathCostThroughNewParent = parentCell.pathCost + d
         if (pathCostThroughNewParent < cell.pathCost):
             cell.parent = parentCell
             cell.pathCost = pathCostThroughNewParent
             self.reorderPriorityQueue()
 
-    # Reorder the queue. I don't see another way to do this, other than
-    # create a new queue and copy over tuple-by-tuple. This rebuilds
-    # the heap trees.
+    # Reorder the queue. I don't see a clean way to do this.  Here I
+    # just blindly create a new queue and copy over.  Another approach
+    # is to transform into a list, heapify and transform back. People
+    # have also used lambdas and sort functions.
     def reorderPriorityQueue(self):
         newQueue = PriorityQueue()
 
         while self.priorityQueue.empty() is False:
             tuple = self.priorityQueue.get()
-            newQueue.put(tuple)
+            cell = tuple[1]
+            key = self.computePriorityQueueKey(cell)
+            newQueue.put((key, cell))
              
         self.priorityQueue = newQueue
+            
+    def computePriorityQueueKey(self, cell):
+        
+        # Compute the cost using weighted A*
+        key = cell.pathCost
+
+        return key
