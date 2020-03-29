@@ -17,6 +17,9 @@ class ReactivePlannerController(PlannerControllerBase):
         self.gridUpdateLock =  threading.Condition()
         self.aisleToDriveDown = None
 
+        # Map that has the aisle as the key and the intermediate coordinate as a value.
+        self.aisleCoordsMap = self.getAisleIntermediateCoords()
+
     def mapUpdateCallback(self, mapUpdateMessage):
 
         # Update the occupancy grid and search grid given the latest map update
@@ -30,6 +33,19 @@ class ReactivePlannerController(PlannerControllerBase):
             return
 
         self.checkIfPathCurrentPathIsStillGood()
+
+    def getAisleIntermediateCoords(self):
+        # Creates a mapping of the aisles to their intermediate coordinates.
+        
+        initialPoint = (28, 20)
+        aisleMap = {} # Maps aisle value to the intermediate point.
+        offset = 15 # Gap distance between each aisle.
+
+        for aisle in Aisle:
+            point = (initialPoint[0] + (aisle.value * offset), initialPoint[1])
+            aisleMap[aisle] = point
+        
+        return aisleMap
 
     def checkIfPathCurrentPathIsStillGood(self):
 
@@ -45,7 +61,7 @@ class ReactivePlannerController(PlannerControllerBase):
     # Choose the first aisle the robot will initially drive down.
     # This is based on the prior.
     def chooseInitialAisle(self, startCellCoords, goalCellCoords):
-        return Aisle.A
+        return Aisle.E
 
     # Choose the subdquent aisle the robot will drive down
     def chooseAisle(self, startCellCoords, goalCellCoords):
@@ -71,16 +87,32 @@ class ReactivePlannerController(PlannerControllerBase):
 
         # Implement your method here to construct a path which will drive the robot
         # from the start to the goal via the aisle.
-        pathToGoalFound = self.planner.search(startCellCoords, goalCellCoords)    
+        intermediateCellCoords = self.aisleCoordsMap[aisle]
+        pathToGoalFound = self.planner.search(startCellCoords, intermediateCellCoords)
+
+        # If we can't reach the goal, give up and return
+        if pathToGoalFound is False:
+            rospy.logwarn("Could not find a path to the intermediate goal at (%d, %d)", \
+                            intermediateCellCoords[0], intermediateCellCoords[1])
+            return None
+        
+        currentPlannedPath = self.planner.extractPathToGoal() 
+
+        # This path is currently the path to the intermediate cell.
+        pathToGoalFound = self.planner.search(intermediateCellCoords, goalCellCoords)
 
         # If we can't reach the goal, give up and return
         if pathToGoalFound is False:
             rospy.logwarn("Could not find a path to the goal at (%d, %d)", \
                             goalCellCoords[0], goalCellCoords[1])
             return None
+        
+        secondPlannedPath = self.planner.extractPathToGoal() 
 
-        # Extract the path
-        currentPlannedPath = self.planner.extractPathToGoal()
+        # Attach remaining path to the goal cell, to the path that goes from
+        # start to intermediate cell.
+        for waypoint in secondPlannedPath.waypoints:
+            currentPlannedPath.waypoints.append(waypoint)
 
         return currentPlannedPath
 
