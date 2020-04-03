@@ -19,6 +19,7 @@ class ReactivePlannerController(PlannerControllerBase):
 
         # Map that has the aisle as the key and the intermediate coordinate as a value.
         self.aisleCoordsMap = self.getAisleIntermediateCoords()
+        self.startPoint = self.controller.getCurrentPose()
 
     def mapUpdateCallback(self, mapUpdateMessage):
 
@@ -56,24 +57,92 @@ class ReactivePlannerController(PlannerControllerBase):
         # If the route is not viable any more, call
         # self.controller.stopDrivingToCurrentGoal()
 
-        pass
+        pathBlocked = False
+        
+        waypointSize = len(self.currentPlannedPath.waypoints)
+        for i in range(waypointSize):
+            cell = self.currentPlannedPath.waypoints[i]
+
+            # If getCell returns 1 it means there is an obstacle in that cell.
+            if self.occupancyGrid.getCell(cell.coords[0], cell.coords[1]) == 1:
+                pathBlocked = True
+                break
+        
+        if pathBlocked:
+            self.controller.stopDrivingToCurrentGoal()
 
     # Choose the first aisle the robot will initially drive down.
     # This is based on the prior.
     def chooseInitialAisle(self, startCellCoords, goalCellCoords):
-        return Aisle.E
+        return Aisle.B
 
     # Choose the subdquent aisle the robot will drive down
     def chooseAisle(self, startCellCoords, goalCellCoords):
-        return Aisle.E
+        return Aisle.C
+
+    # Prints the waiting plan and re-plan cost values cleanly on system out
+    def printPathCost(self, waitingPlanCost, replanCost):
+
+        print("WAITING PLAN COST: {0}".format(waitingPlanCost))
+        print("RE-PLAN COST: {0}".format(replanCost))
+
+    # Calculates the cost of the waiting plan.
+    def calculateWaitPlanCost(self):
+
+        L_W = 2 # Wait time cost defined in assignment as 2.
+
+        # The length of the list of waypoints give the path cost of the route,
+        # which is added to the wait time to give wait plan cost.
+        return L_W + len(self.currentPlannedPath.waypoints)
+
+    # Calculates the re-plan cost.
+    def calculateReplanCost(self, pathCostToObstacle, startCoord, goalCoord):
+
+        newAisle = self.chooseAisle(startCoord, goalCoord)
+        newPath = self.planPathToGoalViaAisle(startCoord, goalCoord, newAisle)
+
+        return len(newPath.waypoints) + pathCostToObstacle
 
     # Return whether the robot should wait for the obstacle to clear or not.
     def shouldWaitUntilTheObstacleClears(self, startCellCoords, goalCellCoords):
+
+        pathCostToObstacle = 0 # Counts each waypoint until robot arrives at waiting region
+        waitingPlanCost = 0 # Just to declare the value otherwise Python complains.
+        replanCost = 0 # Just to declare the value otherwise Python complains.
+
+        for waypoint in self.currentPlannedPath.waypoints:
+            # Only consider cells in the path that are obstacle cells.
+            if self.occupancyGrid.getCell(waypoint.coords[0], waypoint.coords[1]) == 1:
+                #if self.cellWithinWaitingRange(startCellCoords, waypoint.coords):
+                waitingPlanCost = self.calculateWaitPlanCost()
+                replanCost = self.calculateReplanCost(pathCostToObstacle, startCellCoords, goalCellCoords)
+
+                if waitingPlanCost < replanCost:
+                    self.printPathCost(waitingPlanCost, replanCost)
+
+                    return True
+            
+            pathCostToObstacle += 1
+
+        self.printPathCost(waitingPlanCost, replanCost)
+
         return False
 
     # This method will wait until the obstacle has cleared and the robot can move.
     def waitUntilTheObstacleClears(self):
-        pass
+
+        continueWaiting = True
+
+        while continueWaiting:
+            obstacleFound = False
+
+            for waypoint in self.currentPlannedPath.waypoints:
+                if self.occupancyGrid.getCell(waypoint.coords[0], waypoint.coords[1]) == 1:
+                    obstacleFound = True
+                    break
+
+            if not obstacleFound:
+                continueWaiting = False
     
     # Plan a path to the goal which will go down the designated aisle. The code, as
     # currently implemented simply tries to drive from the start to the goal without
