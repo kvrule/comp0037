@@ -71,10 +71,34 @@ class ReactivePlannerController(PlannerControllerBase):
         if pathBlocked:
             self.controller.stopDrivingToCurrentGoal()
 
+    # Prints original path cost through aisle B and the alternate path cost.
+    def printInitialPathCosts(self, originalPathCost, alternatePathCost):
+
+        print("ORIGINAL PATH COST (AISLE B): {0}".format(originalPathCost))
+        print("ALTERNATE PATH COST: {0}".format(alternatePathCost))
+
     # Choose the first aisle the robot will initially drive down.
     # This is based on the prior.
     def chooseInitialAisle(self, startCellCoords, goalCellCoords):
-        return Aisle.B
+
+        p = 0.8 # Probability obstacle is present
+        L_W = 2 # Wait cost constant
+
+        aisleBPath = self.planPathToGoalViaAisle(startCellCoords, goalCellCoords, Aisle.B)
+        alternateAisle = self.chooseAisle(startCellCoords, goalCellCoords)
+        alternatePath = self.planPathToGoalViaAisle(startCellCoords, goalCellCoords,
+                                                    alternateAisle)
+
+        originalPathCost = len(aisleBPath.waypoints) + (p * L_W)
+        alternatePathCost = len(alternatePath.waypoints)
+
+        self.printInitialPathCosts(originalPathCost, alternatePathCost)
+
+        # Choose the initial path immediately, based on estimated path costs.
+        if originalPathCost < alternatePathCost: 
+            return Aisle.B
+        else: 
+            return alternateAisle
 
     # Choose the subdquent aisle the robot will drive down
     def chooseAisle(self, startCellCoords, goalCellCoords):
@@ -113,7 +137,6 @@ class ReactivePlannerController(PlannerControllerBase):
         for waypoint in self.currentPlannedPath.waypoints:
             # Only consider cells in the path that are obstacle cells.
             if self.occupancyGrid.getCell(waypoint.coords[0], waypoint.coords[1]) == 1:
-                #if self.cellWithinWaitingRange(startCellCoords, waypoint.coords):
                 waitingPlanCost = self.calculateWaitPlanCost()
                 replanCost = self.calculateReplanCost(pathCostToObstacle, startCellCoords, goalCellCoords)
 
